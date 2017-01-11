@@ -19,7 +19,7 @@ package com.google.android.things.contrib.driver.sensehat;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.view.SurfaceHolder;
+import android.graphics.drawable.Drawable;
 
 import com.google.android.things.pio.I2cDevice;
 import com.google.android.things.pio.PeripheralManagerService;
@@ -27,14 +27,14 @@ import com.google.android.things.pio.PeripheralManagerService;
 import java.io.IOException;
 
 /**
- * LedMatrix implements a subset of the SurfaceHolder interface to allow to draw on the LED matrix.
+ *  Driver for the SenseHat LED matrix.
  */
 public class LedMatrix implements AutoCloseable {
     public static final int WIDTH = 8;
     public static final int HEIGHT = 8;
     private static final int BUFFER_SIZE = WIDTH * HEIGHT * 3 + 1;
+    private byte[] mBuffer = new byte[BUFFER_SIZE];
 
-    private Bitmap mBitmap = Bitmap.createBitmap(8, 8, Bitmap.Config.ARGB_8888);
     private I2cDevice mDevice;
 
     /**
@@ -67,31 +67,57 @@ public class LedMatrix implements AutoCloseable {
     }
 
     /**
-     * Start editing the pixels in the surface.
-     * @return The Canvas to draw into the surface.
+     * Draw the given color to the LED matrix.
+     * @param color Color to draw
+     * @throws IOException
      */
-    public Canvas lockCanvas() {
-        return new Canvas(mBitmap);
+    public void draw(int color) throws IOException {
+        mBuffer[0] = 0;
+        float a = Color.alpha(color) / 255.f;
+        byte r = (byte)((int)(Color.red(color)*a)>>3);
+        byte g = (byte)((int)(Color.green(color)*a)>>3);
+        byte b = (byte)((int)(Color.blue(color)*a)>>3);
+        for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH; x++) {
+                mBuffer[1+x+WIDTH*0+3*WIDTH*y] = r;
+                mBuffer[1+x+WIDTH*1+3*WIDTH*y] = g;
+                mBuffer[1+x+WIDTH*2+3*WIDTH*y] = b;
+            }
+        }
+        mDevice.write(mBuffer, mBuffer.length);
     }
 
     /**
-     * Finish editing pixels in the surface.
-     * After this call, the surface's current pixels will be shown on the LED matrix.
-     * @param canvas The Canvas previously returned by lockCanvas().
+     * Draw the given drawable to the LED matrix.
+     * @param drawable Drawable to draw
      * @throws IOException
      */
-    public void unlockCanvasAndPost(Canvas canvas) throws IOException {
-        byte[] colorBytes = new byte[BUFFER_SIZE];
-        colorBytes[0] = 0;
-        for (int y = 0; y < 8; y++) {
-            for (int x = 0; x < 8; x++) {
-                int p = mBitmap.getPixel(x, y);
-                double a = Color.alpha(p) / 255.0;
-                colorBytes[1+x+24*y] = (byte)((int)(Color.red(p)*a)>>3);
-                colorBytes[1+x+8+24*y] = (byte)((int)(Color.green(p)*a)>>3);
-                colorBytes[1+x+16+24*y] = (byte)((int)(Color.blue(p)*a)>>3);
+    public void draw(Drawable drawable) throws IOException {
+        Bitmap bitmap = Bitmap.createBitmap(WIDTH, HEIGHT,
+                Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, WIDTH, HEIGHT);
+        drawable.draw(canvas);
+        draw(bitmap);
+    }
+
+    /**
+     * Draw the given bitmap to the LED matrix.
+     * @param bitmap Bitmap to draw
+     * @throws IOException
+     */
+    public void draw(Bitmap bitmap) throws IOException {
+        Bitmap dest = Bitmap.createScaledBitmap(bitmap, 8, 8, true);
+        mBuffer[0] = 0;
+        for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH; x++) {
+                int p = bitmap.getPixel(x, y);
+                float a = Color.alpha(p) / 255.f;
+                mBuffer[1+x+WIDTH*0+3*WIDTH*y] = (byte)((int)(Color.red(p)*a)>>3);
+                mBuffer[1+x+WIDTH*1+3*WIDTH*y] = (byte)((int)(Color.green(p)*a)>>3);
+                mBuffer[1+x+WIDTH*2+3*WIDTH*y] = (byte)((int)(Color.blue(p)*a)>>3);
             }
         }
-        mDevice.write(colorBytes, colorBytes.length);
+        mDevice.write(mBuffer, mBuffer.length);
     }
 }

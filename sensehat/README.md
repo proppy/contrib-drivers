@@ -2,7 +2,7 @@ Sense HAT driver for Android Things
 =====================================
 
 This driver provides easy access to the peripherals available on the Raspberry Pi [Sense HAT][product]:
--
+
 - 8×8 RGB LED matrix
 - 5-button miniature joystick
 - ST LPS25H barometric pressure and temperature sensor
@@ -35,25 +35,25 @@ dependencies {
 // import the SenseHat driver
 import com.google.android.things.driver.sensehat.SenseHat;
 ```
-
 ```
 // Color the LED matrix.
 LedMatrix display = SenseHat.openDisplay();
-Canvas canvas = display.lockCanvas();
-canvas.drawColor(Color.MAGENTA);
-mPiSense.unlockCanvasAndPost(canvas);
-// Close the display when done.
-display.close();
+display.draw(Color.MAGENTA);
 ```
-
+```
+//  Display a drawable on the LED matrix.
+display.draw(context.getDrawable(android.R.drawable.ic_dialog_alert));
+```
 ```
 // Display a gradient on the LED matrix.
-LedMatrix display = SenseHat.openDisplay();
-Canvas canvas = display.lockCanvas();
+Bitmap bitmap = Bitmap.createBitmap(SenseHat.DISPLAY_WIDTH, SenseHat.DISPLAY_HEIGHT, Bitmap.Config.ARGB_8888);
+Canvas canvas = new Canvas(bitmap);
 Paint paint = new Paint();
 paint.setShader(new RadialGradient(4, 4, 4, Color.RED, Color.BLUE, Shader.TileMode.CLAMP));
-canvas.drawRect(0, 0, 8, 8, paint);
-mPiSense.unlockCanvasAndPost(canvas);
+canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), paint);
+display.draw(bitmap);
+```
+```
 // Close the display when done.
 display.close();
 ```

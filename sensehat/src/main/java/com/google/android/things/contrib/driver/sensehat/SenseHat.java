@@ -24,13 +24,15 @@ import com.google.android.things.contrib.driver.lps25h.Lps25hSensorDriver;
 import java.io.IOException;
 
 /**
- * Driver factory for the Sense HAT.
+ * Driver factory for the Sense Hat.
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class SenseHat {
 
     public static final int I2C_ADDRESS =  0x46;
-    public static final String I2C_BUS = "I2C1"; // All I2C devices run on the same bus
+    public static final String I2C_BUS = "I2C1";
+    public static final int DISPLAY_WIDTH = LedMatrix.WIDTH;
+    public static final int DISPLAY_HEIGHT = LedMatrix.HEIGHT;
     public static final String JOYSTICK_INTERRUPT = "BCM23"; // Interrupt pin for joystick events
 
     // 8×8 RGB LED matrix

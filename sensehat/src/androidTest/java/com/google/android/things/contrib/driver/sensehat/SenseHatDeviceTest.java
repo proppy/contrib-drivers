@@ -16,11 +16,14 @@
 
 package com.google.android.things.contrib.driver.sensehat;
 
+import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RadialGradient;
 import android.graphics.Shader;
+import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SmallTest;
 import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
@@ -28,7 +31,6 @@ import android.util.Log;
 import com.google.android.things.contrib.driver.hts221.Hts221;
 import com.google.android.things.contrib.driver.lps25h.Lps25h;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -37,14 +39,22 @@ import java.io.IOException;
 @RunWith(AndroidJUnit4.class)
 @SmallTest
 public class SenseHatDeviceTest {
-
     @Test
     public void senseHat_DisplayColor() throws IOException {
         // Color the LED matrix.
         LedMatrix display = SenseHat.openDisplay();
-        Canvas canvas = display.lockCanvas();
-        canvas.drawColor(Color.MAGENTA);
-        display.unlockCanvasAndPost(canvas);
+
+        display.draw(Color.MAGENTA);
+        // Close the display when done.
+        display.close();
+    }
+
+    @Test
+    public void senseHat_DisplayDrawable() throws IOException {
+        Context context = InstrumentationRegistry.getTargetContext();
+        // Display a drawable on the LED matrix.
+        LedMatrix display = SenseHat.openDisplay();
+        display.draw(context.getDrawable(android.R.drawable.ic_secure));
         // Close the display when done.
         display.close();
     }
@@ -53,11 +63,12 @@ public class SenseHatDeviceTest {
     public void senseHat_DisplayGradient() throws IOException {
         // Display a gradient on the LED matrix.
         LedMatrix display = SenseHat.openDisplay();
-        Canvas canvas = display.lockCanvas();
+        Bitmap bitmap = Bitmap.createBitmap(SenseHat.DISPLAY_WIDTH, SenseHat.DISPLAY_HEIGHT, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
         Paint paint = new Paint();
         paint.setShader(new RadialGradient(4, 4, 4, Color.RED, Color.BLUE, Shader.TileMode.CLAMP));
-        canvas.drawRect(0, 0, 8, 8, paint);
-        display.unlockCanvasAndPost(canvas);
+        canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), paint);
+        display.draw(bitmap);
         // Close the display when done.
         display.close();
     }
